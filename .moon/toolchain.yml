@@ -1,0 +1,22 @@
+# https://moonrepo.dev/docs/config/toolchain
+$schema: 'https://moonrepo.dev/schemas/toolchain.json'
+
+# Extend and inherit an external configuration file. Must be a valid HTTPS URL or file system path.
+# extends: './shared/toolchain.yml'
+
+# Configures Rust within the toolchain.
+rust:
+  # The Rust toolchain to use. Must be a semantic version or release channel.
+  # version: 'stable'
+
+  # List of Cargo binaries to install globally and make available.
+  bins: []
+
+  # List of rustup toolchain components to install and make available.
+  components: []
+
+  # Sync the configured version above as a channel to the root `rust-toolchain.toml` config.
+  syncToolchainConfig: false
+
+  # List of rustup toolchain targets to install and make available.
+  targets: []
