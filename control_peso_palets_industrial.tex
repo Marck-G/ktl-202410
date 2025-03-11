@@ -1,0 +1,118 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{geometry}
+\geometry{a4paper}
+
+\title{Diseño del Dispositivo IoT para el Pesaje de Palets de Queso y Cajas de Cartón}
+\author{Ingeniería Electrónica}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introducción}
+Este documento presenta el diseño de un sistema IoT para el pesaje en tiempo real de palets de queso y cajas de cartón en una empresa láctea. El objetivo es anticiparse al vaciado de los palets mediante el uso de celdas de carga y sensores IoT, lo que optimiza la gestión de recursos y reduce los tiempos de inactividad en la línea de producción.
+
+\section{Diagrama de Bloques del Sistema}
+El sistema se compone de los siguientes bloques principales: 
+
+\begin{center}
+\includegraphics[width=\textwidth]{diagrama_de_bloques.png} % Asegúrate de incluir una imagen del diagrama de bloques si la tienes
+\end{center}
+
+\section{Componentes del Diseño}
+
+\subsection{A. Sensores de Peso (Celdas de Carga)}
+Las celdas de carga son dispositivos que convierten la fuerza de compresión (el peso) en una señal eléctrica. Cada palet de queso o caja de cartón estará equipado con 4 celdas de carga.
+
+\begin{itemize}
+    \item \textbf{Selección del Sensor:} Se utilizarán celdas de carga tipo S (tensión), que son comúnmente usadas en aplicaciones industriales debido a su alta precisión y fiabilidad.
+    \item \textbf{Interfaz:} Las celdas de carga estarán conectadas al amplificador de señal HX711, que amplifica la señal de salida para que pueda ser leída por el microcontrolador.
+\end{itemize}
+
+\subsection{B. Amplificador de Señal}
+Las celdas de carga proporcionan una señal analógica de muy baja intensidad. Para que el microcontrolador pueda leer esta señal, se utiliza un amplificador de señal.
+
+\begin{itemize}
+    \item \textbf{Amplificador de Señal:} Se utilizará el amplificador de señal \textbf{HX711}, que convierte la señal analógica de las celdas de carga a una señal digital legible por el microcontrolador.
+\end{itemize}
+
+\subsection{C. Microcontrolador / Procesador}
+El microcontrolador es responsable de leer las señales de peso proporcionadas por las celdas de carga y enviarlas a la plataforma de monitoreo.
+
+\begin{itemize}
+    \item \textbf{Microcontrolador recomendado:} Se utilizará un microcontrolador \textbf{ESP32} o \textbf{ESP8266}, que soportan conectividad WiFi integrada, ideal para el envío de datos a la plataforma en tiempo real.
+    \item \textbf{Funciones del microcontrolador:} El microcontrolador leerá los datos del HX711, calculará el peso y enviará esta información a la plataforma de monitoreo.
+\end{itemize}
+
+\subsection{D. Módulo de Comunicación Inalámbrica}
+El sistema IoT debe enviar los datos de peso a la plataforma de monitoreo en tiempo real. Para ello, se utilizarán módulos de comunicación inalámbrica.
+
+\begin{itemize}
+    \item \textbf{WiFi:} Si la infraestructura de la planta lo permite, se utilizará el módulo WiFi integrado en el ESP32 para enviar los datos a la red local.
+    \item \textbf{Alternativa - LoRa:} En caso de que no haya cobertura WiFi suficiente, se puede utilizar LoRa para la transmisión de datos a larga distancia con bajo consumo de energía.
+    \item \textbf{GSM:} Si se requiere cobertura en zonas alejadas de la planta, se puede integrar un módulo GSM para enviar los datos mediante red celular.
+\end{itemize}
+
+\subsection{E. Fuente de Alimentación}
+El dispositivo IoT necesitará una fuente de alimentación confiable.
+
+\begin{itemize}
+    \item \textbf{Fuente de alimentación:} Se utilizará una batería recargable de tipo Li-Ion o Li-Po, complementada con un circuito de carga para garantizar un funcionamiento autónomo.
+    \item \textbf{Alternativa de energía:} En caso de que sea posible, el sistema puede conectarse a una fuente de energía AC/DC para evitar depender de la batería.
+\end{itemize}
+
+\subsection{F. Plataforma de Monitoreo / ERP}
+Los datos de peso se enviarán a una plataforma centralizada para su monitoreo.
+
+\begin{itemize}
+    \item \textbf{Plataforma de monitoreo:} Se desarrollará una interfaz visual, accesible desde una aplicación web o móvil, que permitirá a los supervisores monitorear en tiempo real el peso de los palets.
+    \item \textbf{Integración con ERP:} La plataforma de monitoreo también estará integrada con el sistema ERP de la empresa, lo que permitirá gestionar los inventarios y los recursos logísticos de manera eficiente.
+\end{itemize}
+
+\section{Diseño de Hardware}
+
+\subsection{Conexiones entre los Componentes}
+A continuación, se detallan las conexiones necesarias para que los componentes interactúen de manera efectiva:
+
+\begin{itemize}
+    \item Las celdas de carga se conectan al amplificador HX711 a través de 4 cables: VCC, GND, DT (data) y SCK (clock).
+    \item El amplificador HX711 se conecta al microcontrolador ESP32 mediante los pines DT (Data) y SCK (Clock).
+    \item El microcontrolador ESP32 se conecta a la red WiFi o LoRa para enviar los datos a la plataforma de monitoreo.
+\end{itemize}
+
+\subsection{Esquema Básico de Conexiones}
+El esquema básico de conexiones es el siguiente:
+
+\[
+\text{Celdas de Carga} \rightarrow \text{Amplificador HX711} \rightarrow \text{Microcontrolador ESP32} \rightarrow \text{Plataforma de Monitoreo}
+\]
+
+\section{Consideraciones de Software}
+
+\subsection{Lectura del Peso}
+El software del microcontrolador debe leer las señales analógicas de las celdas de carga y convertirlas a valores digitales mediante el uso del amplificador HX711. La lectura se realiza periódicamente para obtener el peso total de cada palet.
+
+\subsection{Transmisión de Datos}
+Una vez calculado el peso, el microcontrolador enviará los datos a la plataforma de monitoreo mediante WiFi o LoRa.
+
+\subsection{Alertas}
+El sistema debe generar alertas automáticas cuando el peso del palet se acerque al umbral crítico, notificando a los operarios para que procedan con la reposición del material.
+
+\section{Pasos para la Implementación}
+
+\begin{enumerate}
+    \item Desarrollar el software para leer las señales de las celdas de carga y calcular el peso de los palets.
+    \item Implementar la comunicación del microcontrolador con la plataforma de monitoreo.
+    \item Realizar pruebas de calibración con diferentes pesos de palets.
+    \item Integrar el sistema con el ERP de la empresa para la gestión de inventarios.
+    \item Implementar el sistema en toda la planta y evaluar su rendimiento.
+\end{enumerate}
+
+\section{Conclusión}
+El sistema IoT propuesto para el pesaje de palets de queso y cajas de cartón permitirá optimizar el flujo de materiales y reducir los tiempos muertos durante el proceso de embalaje. Con la implementación de un sistema de pesaje y monitoreo en tiempo real, se mejorará la eficiencia operativa y la planificación logística.
+
+\end{document}
+
