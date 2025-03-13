@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -17,8 +17,8 @@ impl Metadata {
             id: id,
             key: key.to_string(),
             value: value.to_string(),
-            date_created: NaiveDateTime::UNIX_EPOCH,
-            date_modified: NaiveDateTime::UNIX_EPOCH
+            date_created: Utc::now().naive_utc(),
+            date_modified: Utc::now().naive_utc()
         }
     }
 }
@@ -42,8 +42,8 @@ impl UserEntity {
             email: email,
             verified: false,
             person: Some(Uuid::nil()),
-            date_created: NaiveDateTime::UNIX_EPOCH,
-            date_modified: NaiveDateTime::UNIX_EPOCH,
+            date_created: Utc::now().naive_utc(),
+            date_modified: Utc::now().naive_utc(),
             password: password_token,
             metadata: Vec::new()
         }
