@@ -263,4 +263,16 @@ impl<'a> UserRepository for PgUserRepository<'a> {
     
         Ok(exists)
     }
+
+    fn update_metadata(&mut self, update_user_id: Uuid, update_key: String, update_value: Option<String>) -> Result<bool, QueryError> {
+        use crate::infra::postgres::schema::usr_metadata::dsl::*;
+    
+        diesel::update(usr_metadata.filter(user_id.eq(update_user_id).and(key.eq(update_key))))
+            .set(value.eq(update_value))
+            .execute(self.connection)
+            .map_err(|e| QueryError::new(e.to_string().as_str()))?;
+    
+        Ok(true)
+    }
+    
 }
