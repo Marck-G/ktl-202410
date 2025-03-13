@@ -1,42 +1,64 @@
+use chrono::NaiveDateTime;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Metadata {
-    id: String,
-    key: String,
+    pub id: Uuid,
+    pub key: String,
     pub value: String,
-    pub date_created: u64,
-    pub date_modified: u64
+    pub date_created: NaiveDateTime,
+    pub date_modified: NaiveDateTime
 }
 
 impl Metadata {
-    pub fn new (id: &str, key: &str, value: &str) -> Metadata{
+    pub fn new (id: Uuid, key: String, value: String) -> Metadata{
         Metadata {
-            id: id.to_string(),
+            id: id,
             key: key.to_string(),
             value: value.to_string(),
-            date_created: 0,
-            date_modified: 0
+            date_created: NaiveDateTime::UNIX_EPOCH,
+            date_modified: NaiveDateTime::UNIX_EPOCH
         }
     }
 }
 
-
+#[derive(Serialize, Deserialize, Clone)]
 pub struct UserEntity {
-    id: String,
+    id: Uuid,
     email: String,
+    password: String,
     pub verified: bool,
-    pub person: String,
-    pub date_created: u64,
-    pub date_modified: u64,
+    pub person: Option<Uuid>,
+    pub date_created: NaiveDateTime,
+    pub date_modified: NaiveDateTime,
+    pub metadata: Vec<Metadata>,
 }
 
 impl UserEntity {
-    pub fn new(id: &str, email: &str) -> UserEntity {
+    pub fn new(id: Uuid, email: String, password_token: String) -> UserEntity {
         UserEntity {
-            id: id.to_string(),
-            email: email.to_string(),
+            id: id,
+            email: email,
             verified: false,
-            person: "".to_string(),
-            date_created: 0,
-            date_modified: 0
+            person: Some(Uuid::nil()),
+            date_created: NaiveDateTime::UNIX_EPOCH,
+            date_modified: NaiveDateTime::UNIX_EPOCH,
+            password: password_token,
+            metadata: Vec::new()
         }
     }
+
+    pub fn get_email(&self) -> String {
+        self.email.clone()
+    }
+
+    pub fn get_id(&self) -> Uuid {
+        self.id.clone()
+    }
+
+    pub fn get_password(&self) -> String {
+        self.password.clone()
+    }
+
 }
