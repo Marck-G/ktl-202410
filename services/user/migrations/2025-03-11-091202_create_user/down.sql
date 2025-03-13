@@ -1,3 +1,1 @@
-DROP TABLE USR_metadata;
-
 DROP TABLE USR_main;
