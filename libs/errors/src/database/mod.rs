@@ -1,6 +1,6 @@
 use std::fmt;
 
-use data::{invalid_field::InvalidData, not_found::DataNotFound, query::QueryError};
+pub use data::{invalid_field::InvalidData, not_found::DataNotFound, query::QueryError};
 pub mod data;
 
 #[derive(Debug)]
