@@ -1,0 +1,12 @@
+[package]
+name = "crypto_helper"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+base64 = "0.22.1"
+errors = { workspace = true }
+openssl = { version = "0.10.71", features = ["vendored"] }
+rand = { version = "0.6.4"}
+rand_core = { version = "0.6.4", features = ["serde", "std"] }
+rsa = { version = "0.9.8", features = ["serde", "std"] }
