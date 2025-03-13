@@ -1,4 +1,7 @@
 [workspace]
-members = ["services/*"]
+members = [ "libs/*","services/*"]
 resolver = "2"
+
+[workspace.dependencies]
+
 
