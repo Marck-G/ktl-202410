@@ -1,5 +1,3 @@
-use std::any::Any;
-
 use crate::domain::{mappers::UserMapper, user_entity::{Metadata, UserEntity}};
 
 use super::models::user::{UserMetadataModel, UserModel};

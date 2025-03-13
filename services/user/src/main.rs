@@ -1,15 +1,13 @@
-use std::env;
-
-use diesel::{Connection, PgConnection};
 use domain::{repositories::user_repository::UserRepository, user_entity::{Metadata, UserEntity}};
 use dotenvy::dotenv;
-use infra::postgres::repositories::PgUserRepository;
+use infra::postgres::{repositories::PgUserRepository, establish_connection};
 use uuid::Uuid;
 
 mod domain;
 mod infra;
 
 fn main() {
+    dotenv().ok();
     let connection = &mut establish_connection();
     let metadata: Vec<Metadata> = vec![
         Metadata::new(Uuid::new_v4(), String::from("meta"), String::from("test"))
@@ -24,10 +22,3 @@ fn main() {
     }
 }
 
-pub fn establish_connection() -> PgConnection {
-    dotenv().ok();
-
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    PgConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
-}
