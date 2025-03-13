@@ -1,4 +1,4 @@
-use errors::database::{data::{not_found::DataNotFound, query::QueryError}, DatabaseError};
+use errors::database::{data::query::QueryError, DatabaseError};
 use uuid::Uuid;
 
 use crate::domain::user_entity::UserEntity;

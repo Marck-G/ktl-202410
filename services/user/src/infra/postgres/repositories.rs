@@ -1,6 +1,6 @@
 use errors::database::data::not_found::DataNotFound;
 use errors::database::DatabaseError;
-use errors::database::{data::query::QueryError};
+use errors::database::data::query::QueryError;
 use diesel::{ExpressionMethods, SelectableHelper, PgConnection, QueryDsl, RunQueryDsl};
 use diesel::prelude::*;
 use uuid::Uuid;
