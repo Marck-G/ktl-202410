@@ -1,7 +1,8 @@
 [workspace]
-members = [ "libs/*","services/*"]
+members = [ "services/*"]
 resolver = "2"
 
 [workspace.dependencies]
-
+errors = { path= "./libs/errors"}
+crypto_helper = { path= "./libs/crypto_helper"}
 
