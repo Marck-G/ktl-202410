@@ -5,12 +5,12 @@ diesel::table! {
         id -> Uuid,
         #[max_length = 255]
         email -> Varchar,
-        #[max_length = 300]
-        password_token -> Varchar,
+        password_token -> Text,
         verified -> Bool,
         person -> Nullable<Uuid>,
         date_created -> Timestamp,
         date_modified -> Timestamp,
+        deleted -> Bool,
     }
 }
 

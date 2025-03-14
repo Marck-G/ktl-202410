@@ -13,4 +13,6 @@ pub trait UserRepository {
     fn filter_by_metadata(&mut self, metadata: Vec<(String, String)>) -> Result<Vec<UserEntity>, QueryError>;
     fn email_exists(&mut self, email: String) -> Result<bool, QueryError>;
     fn update_metadata(&mut self, user_id: Uuid, key: String, value: Option<String>) -> Result<bool, QueryError>;
+    fn soft_delete(&mut self, user_id: Uuid) -> Result<bool, QueryError>;
+    fn restore(&mut self, user_id: Uuid) -> Result<bool, QueryError>;
 }
