@@ -1,3 +1,4 @@
+use diesel::dsl::delete;
 use errors::database::data::not_found::DataNotFound;
 use errors::database::DatabaseError;
 use errors::database::data::query::QueryError;
@@ -28,7 +29,8 @@ impl<'a> UserRepository for PgUserRepository<'a> {
         use crate::infra::postgres::schema::{usr_main, usr_metadata};
 
     let user_model: UserModel = usr_main::table
-        .filter(usr_main::id.eq(user_id))  // Explicit table prefix
+        .filter(usr_main::id.eq(user_id))
+        .filter(usr_main::deleted.eq(false))  // Explicit table prefix
         .select(UserModel::as_select())
         .first::<UserModel>(self.connection)
         .map_err(|e| QueryError::new(e.to_string().as_str()))?;
@@ -47,6 +49,7 @@ impl<'a> UserRepository for PgUserRepository<'a> {
         let offset_value = (page - 1).max(0) * limit;
     
         let user_models: Vec<UserModel> = usr_main::table
+            .filter(usr_main::deleted.eq(false))
             .select(UserModel::as_select())
             .limit(limit.into())
             .offset(offset_value.into())
@@ -170,7 +173,7 @@ impl<'a> UserRepository for PgUserRepository<'a> {
     fn filter(&mut self, user: UserEntity) -> Result<Vec<UserEntity>, QueryError> {
         use crate::infra::postgres::schema::{usr_main, usr_metadata};
         let mut query = usr_main::table.into_boxed();
-
+        query = query.filter(usr_main::deleted.eq(false));
         if !user.get_email().is_empty() {
             query = query.filter(usr_main::email.eq(user.get_email()));
         }
@@ -222,6 +225,7 @@ impl<'a> UserRepository for PgUserRepository<'a> {
         }
 
         let user_models: Vec<UserModel> = query
+            .filter(usr_main::deleted.eq(false))
             .select(UserModel::as_select())
             .distinct()
             .load(self.connection)
@@ -275,4 +279,25 @@ impl<'a> UserRepository for PgUserRepository<'a> {
         Ok(true)
     }
     
+    fn soft_delete(&mut self, user_id: Uuid) -> Result<bool, QueryError> {
+        use crate::infra::postgres::schema::usr_main::dsl::*;
+    
+        diesel::update(usr_main.filter(id.eq(user_id)))
+            .set(deleted.eq(true))
+            .execute(self.connection)
+            .map_err(|e| QueryError::new(e.to_string().as_str()))?;
+    
+        Ok(true)
+    }
+
+    fn restore(&mut self, user_id: Uuid) -> Result<bool, QueryError> {
+        use crate::infra::postgres::schema::usr_main::dsl::*;
+    
+        diesel::update(usr_main.filter(id.eq(user_id)))
+            .set(deleted.eq(false))
+            .execute(self.connection)
+            .map_err(|e| QueryError::new(e.to_string().as_str()))?;
+    
+        Ok(true)
+    }
 }
