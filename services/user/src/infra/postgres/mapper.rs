@@ -30,7 +30,8 @@ impl UserMapper<UserModel, UserMetadataModel> for PGUserMapper {
 
     /// Convert `UserEntity` to `UserModel` + `Vec<UserMetadataModel>`
     fn to_infrastructure(entity: &UserEntity) -> (UserModel, Vec<UserMetadataModel>) {
-        let user_model = UserModel {
+        #[warn(unused_mut)]
+        let mut user_model = UserModel {
             id: entity.get_id(),
             email: entity.get_email(),
             password_token: entity.get_password(),
