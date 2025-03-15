@@ -1,7 +1,8 @@
 use errors::services::ServiceError;
 use uuid::Uuid;
+use crate::app::dtos::request::api::{user_create::CreateUserDTO, user_update::UpdateUserDTO};
 
-use crate::domain::{dtos::request::api::{user_create::CreateUserDTO, user_update::UpdateUserDTO}, repositories::user_repository::UserRepository, user_entity::UserEntity};
+use crate::domain::{repositories::user_repository::UserRepository, user_entity::UserEntity};
 
 pub struct UserService<'a> {
     repo: &'a mut dyn UserRepository,
