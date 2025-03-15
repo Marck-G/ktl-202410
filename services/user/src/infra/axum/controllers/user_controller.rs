@@ -1,13 +1,11 @@
 use axum::{
     extract::{Json, Path, Query},
     response::IntoResponse,
-    routing::{delete, get, post, put},
-    Router,
 };
 use uuid::Uuid;
 use axum::http::StatusCode;
 
-use crate::app::{dtos::{request::api::{search_meta::SearchUserDto, user_create::CreateUserDTO, user_list::PaginationParams, user_update::UpdateUserDTO}, response::api::response::ResponseDto}, user_services::UserService};
+use crate::app::{dtos::{request::api::{user_create::CreateUserDTO, user_list::PaginationParams, user_update::UpdateUserDTO}, response::api::response::ResponseDto}, user_services::UserService};
 
 pub struct UserController {
     user_service: UserService<'static>,
