@@ -5,3 +5,4 @@ pub mod remove_metadata;
 pub mod update_metadata;
 pub mod search_meta;
 pub mod search_user;
+pub mod user_list;
