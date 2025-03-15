@@ -1,6 +1,6 @@
-use crate::domain::user_entity::{Metadata, UserEntity};
 use crate::domain::repositories::user_repository::UserRepository;
 use crate::app::dtos::request::api::{add_metadata::AddMetadataDto, update_metadata::UpdateMetadataDto, remove_metadata::RemoveMetadataDto};
+use crate::domain::user_entity::Metadata;
 use chrono::Utc;
 use errors::services::ServiceError;
 use uuid::Uuid;
