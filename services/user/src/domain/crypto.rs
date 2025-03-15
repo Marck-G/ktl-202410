@@ -1,4 +1,6 @@
+use errors::crypto::CryptoError;
+
 pub trait PasswordTools {
-    fn encrypt(password: String) -> String;
-    fn decrypt(bas64: String) -> String;
+    fn encrypt(&mut self, password: String) -> Result<String, CryptoError>;
+    fn decrypt(&mut self, bas64: String) -> Result<String, CryptoError>;
 }
