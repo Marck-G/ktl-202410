@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use super::crypto::PgPasswordTools;
 use super::mapper::PGUserMapper;
 use super::models::user::UserMetadataModel;
@@ -5,127 +7,129 @@ use crate::domain::crypto::PasswordTools;
 use crate::domain::user_entity::UserEntity;
 use crate::domain::{mappers::UserMapper, repositories::user_repository::UserRepository};
 use crate::infra::postgres::models::user::UserModel;
-use diesel::prelude::*;
+use diesel::{insert_into, prelude::*};
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
 use errors::database::data::not_found::DataNotFound;
 use errors::database::data::query::QueryError;
 use errors::database::{DatabaseError, InvalidData};
+use tokio::sync::{Mutex, MutexGuard};
 use uuid::Uuid;
 
-pub struct PgUserRepository<'a> {
-    connection: &'a mut PgConnection,
-    password_helper: &'a mut PgPasswordTools
+pub struct PgUserRepository {
+    connection: Arc<Mutex<PgConnection>>,
+    password_helper: Arc<Mutex<PgPasswordTools>>, // Use Arc<Mutex<T>> instead of mutable reference
 }
+impl PgUserRepository {
+    pub fn new(connection: Arc<Mutex<PgConnection>>, password_helper: Arc<Mutex<PgPasswordTools>>) -> Self {
+        Self { connection, password_helper }
+    }
 
-impl<'a> PgUserRepository<'a> {
-    pub fn new(conn: &'a mut PgConnection, tools: &'a mut PgPasswordTools) -> Self {
-        Self { connection: conn, password_helper: tools }
+    async fn get_connection(&self) -> Result<MutexGuard<'_, PgConnection>, QueryError> {
+        Ok(self.connection.lock().await)
     }
 }
 
-impl<'a> UserRepository for PgUserRepository<'a> {
-    /// Find a user by ID and map it to `UserEntity`
-    fn find_one_by_id(&mut self, user_id: Uuid) -> Result<UserEntity, QueryError> {
+impl UserRepository for PgUserRepository {
+    async fn find_one_by_id(&mut self, user_id: Uuid) -> Result<UserEntity, QueryError> {
         use crate::infra::postgres::schema::{usr_main, usr_metadata};
+
+       let mut conn = self.get_connection().await?;
+
 
         let user_model: UserModel = usr_main::table
             .filter(usr_main::id.eq(user_id))
-            .filter(usr_main::deleted.eq(false)) // Explicit table prefix
-            .select(UserModel::as_select())
-            .first::<UserModel>(self.connection)
-            .map_err(|e| QueryError::new(e.to_string().as_str()))?;
-        // TODO: use inner join
+            .filter(usr_main::deleted.eq(false))
+            .first(&mut *conn)
+            .map_err(|e| QueryError::new(&e.to_string()))?;
+
         let metadata_models: Vec<UserMetadataModel> = usr_metadata::table
-            .filter(usr_metadata::user_id.eq(user_model.id)) // Explicit table prefix
-            .select(UserMetadataModel::as_select())
-            .load(self.connection)
-            .map_err(|e| QueryError::new(e.to_string().as_str()))?;
+            .filter(usr_metadata::user_id.eq(user_model.id))
+            .load(&mut *conn)
+            .map_err(|e| QueryError::new(&e.to_string()))?;
+
         Ok(PGUserMapper::to_domain(user_model, metadata_models))
     }
 
-    fn list(&mut self, page: i32, limit: i32) -> Result<Vec<UserEntity>, QueryError> {
+    async fn list(&mut self, page: i32, limit: i32) -> Result<Vec<UserEntity>, QueryError> {
         use crate::infra::postgres::schema::{usr_main, usr_metadata};
+
+       let mut conn = self.get_connection().await?;
 
         let offset_value = (page - 1).max(0) * limit;
 
         let user_models: Vec<UserModel> = usr_main::table
             .filter(usr_main::deleted.eq(false))
-            .select(UserModel::as_select())
             .limit(limit.into())
             .offset(offset_value.into())
-            .load(self.connection)
-            .map_err(|e| QueryError::new(e.to_string().as_str()))?;
+            .load(&mut *conn)
+            .map_err(|e| QueryError::new(&e.to_string()))?;
 
         let user_ids: Vec<Uuid> = user_models.iter().map(|user| user.id).collect();
-        // Use inner join
+
         let metadata_models: Vec<UserMetadataModel> = usr_metadata::table
-            .filter(usr_metadata::user_id.eq_any(&user_ids)) // Explicit table prefix
-            .select(UserMetadataModel::as_select())
-            .load(self.connection)
-            .map_err(|e| QueryError::new(e.to_string().as_str()))?;
+            .filter(usr_metadata::user_id.eq_any(&user_ids))
+            .load(&mut *conn)
+            .map_err(|e| QueryError::new(&e.to_string()))?;
 
-        let mut user_entities: Vec<UserEntity> = Vec::new();
-
-        for user_model in user_models {
-            let user_metadata: Vec<UserMetadataModel> = metadata_models
-                .iter()
-                .filter(|meta| meta.user_id == user_model.id)
-                .cloned()
-                .collect();
-
-            user_entities.push(PGUserMapper::to_domain(user_model, user_metadata));
-        }
+        let user_entities = user_models
+            .into_iter()
+            .map(|user| {
+                let metadata = metadata_models.iter()
+                    .filter(|m| m.user_id == user.id)
+                    .cloned()
+                    .collect();
+                PGUserMapper::to_domain(user, metadata)
+            })
+            .collect();
 
         Ok(user_entities)
     }
 
-    fn create(&mut self, user: UserEntity) -> Result<bool, QueryError> {
+    async fn create(&mut self, user: UserEntity) -> Result<bool, QueryError> {
         use crate::infra::postgres::schema::{usr_main, usr_metadata};
         use diesel::insert_into;
-        use diesel::RunQueryDsl;
 
-        // Convert `UserEntity` to `UserModel`
-        let (mut user_model, _) = PGUserMapper::to_infrastructure(&user.clone());
-        user_model.password_token = self.password_helper.encrypt(user.get_password()).map_err(|e| QueryError::new(e.to_string().as_str())).unwrap();
-        // Insert the user into the `usr_main` table
+       let mut conn = self.get_connection().await?;
+
+
+        let (mut user_model, _) = PGUserMapper::to_infrastructure(&user);
+        user_model.password_token = self.password_helper
+            .lock()
+            .unwrap()
+            .encrypt(user.get_password())
+            .map_err(|e| QueryError::new(&e.to_string()))?;
+
         insert_into(usr_main::table)
             .values(&user_model)
-            .execute(self.connection)
-            .map_err(|e| QueryError::new(e.to_string().as_str()))?;
+            .execute(&mut *conn)
+            .map_err(|e| QueryError::new(&e.to_string()))?;
 
-        // Convert metadata into `UserMetadataModel`
-        let metadata_models: Vec<UserMetadataModel> = user
-            .metadata
-            .into_iter()
+        let metadata_models: Vec<UserMetadataModel> = user.metadata.into_iter()
             .map(|m| UserMetadataModel {
-                id: m.id,
-                key: m.key,
-                value: Some(m.value),
+                id: m.id, key: m.key, value: Some(m.value),
                 user_id: user_model.id,
-                date_created: m.date_created,
-                date_modified: m.date_modified,
+                date_created: m.date_created, date_modified: m.date_modified,
             })
             .collect();
 
-        // Batch insert metadata if there are any
         if !metadata_models.is_empty() {
             insert_into(usr_metadata::table)
-                .values(&metadata_models) // Pass Vec as a slice `&[]`
-                .execute(self.connection)
-                .map_err(|e| QueryError::new(e.to_string().as_str()))?;
+                .values(&metadata_models)
+                .execute(&mut *conn)
+                .map_err(|e| QueryError::new(&e.to_string()))?;
         }
 
         Ok(true)
     }
 
-    fn update(&mut self, user: UserEntity) -> Result<bool, QueryError> {
+    async fn update(&mut self, user: UserEntity) -> Result<bool, QueryError> {
         use crate::infra::postgres::schema::{usr_main, usr_metadata};
-        use diesel::{update, RunQueryDsl};
+        use diesel::{update, delete};
 
-        // Convert `UserEntity` to `UserModel`
+       let mut conn = self.get_connection().await?;
+
         let (user_model, metadata_models) = PGUserMapper::to_infrastructure(&user);
 
-        // Update the user in `usr_main`
         update(usr_main::table.filter(usr_main::id.eq(user_model.id)))
             .set((
                 usr_main::email.eq(user_model.email),
@@ -133,46 +137,72 @@ impl<'a> UserRepository for PgUserRepository<'a> {
                 usr_main::person.eq(user_model.person),
                 usr_main::date_modified.eq(user_model.date_modified),
             ))
-            .execute(self.connection)
+            .execute(&mut *conn)
             .map_err(|e| QueryError::new(&e.to_string()))?;
 
-        // Remove existing metadata for this user (optional: to prevent duplication)
-        diesel::delete(usr_metadata::table.filter(usr_metadata::user_id.eq(user_model.id)))
-            .execute(self.connection)
+        delete(usr_metadata::table.filter(usr_metadata::user_id.eq(user_model.id)))
+            .execute(&mut *conn)
             .map_err(|e| QueryError::new(&e.to_string()))?;
 
-        // Insert updated metadata
         if !metadata_models.is_empty() {
-            diesel::insert_into(usr_metadata::table)
+            insert_into(usr_metadata::table)
                 .values(&metadata_models)
-                .execute(self.connection)
+                .execute(&mut *conn)
                 .map_err(|e| QueryError::new(&e.to_string()))?;
         }
 
         Ok(true)
     }
 
-    fn change_password(
-        &mut self,
-        user_id: Uuid,
-        new_password: String,
-    ) -> Result<bool, DatabaseError> {
+    async fn change_password(&mut self, user_id: Uuid, new_password: String) -> Result<bool, DatabaseError> {
         use crate::infra::postgres::schema::usr_main;
-        use diesel::{update, RunQueryDsl};
-        let pass = self.password_helper.encrypt(new_password)
-            .map_err(|e| DatabaseError::InvalidData(InvalidData::new(e.to_string().as_str())))
-            .unwrap();
+        use diesel::update;
+        
+       let mut conn = self.get_connection().await.map_err(op);
+
+        let encrypted_password = self.password_helper.lock().await.encrypt(new_password)
+            .map_err(|e| DatabaseError::InvalidData(InvalidData::new(&e.to_string())))?;
+
         let updated_rows = update(usr_main::table.filter(usr_main::id.eq(user_id)))
             .set((
-                usr_main::password_token.eq(pass),
+                usr_main::password_token.eq(encrypted_password),
                 usr_main::date_modified.eq(chrono::Utc::now().naive_utc()),
             ))
-            .execute(self.connection)
+            .execute(&mut *conn)
             .map_err(|e| DatabaseError::QueryError(QueryError::new(&e.to_string())))?;
 
         if updated_rows == 0 {
             return Err(DatabaseError::NotFound(DataNotFound::new("User not found")));
         }
+
+        Ok(true)
+    }
+
+    async fn soft_delete(&mut self, user_id: Uuid) -> Result<bool, QueryError> {
+        use crate::infra::postgres::schema::usr_main;
+        use diesel::update;
+        
+        let mut conn = self.get_connection().await?;
+
+        update(usr_main::table.filter(usr_main::id.eq(user_id)))
+            .set(usr_main::deleted.eq(true))
+            .execute(&mut *conn)
+            .map_err(|e| QueryError::new(&e.to_string()))?;
+
+        Ok(true)
+    }
+
+    async fn restore(&mut self, user_id: Uuid) -> Result<bool, QueryError> {
+        use crate::infra::postgres::schema::usr_main;
+        use diesel::update;
+        
+        let mut conn = self.get_connection().await?;
+
+
+        update(usr_main::table.filter(usr_main::id.eq(user_id)))
+            .set(usr_main::deleted.eq(false))
+            .execute(&mut *conn)
+            .map_err(|e| QueryError::new(&e.to_string()))?;
 
         Ok(true)
     }
@@ -293,26 +323,5 @@ impl<'a> UserRepository for PgUserRepository<'a> {
 
         Ok(true)
     }
-    
-    fn soft_delete(&mut self, user_id: Uuid) -> Result<bool, QueryError> {
-        use crate::infra::postgres::schema::usr_main::dsl::*;
-    
-        diesel::update(usr_main.filter(id.eq(user_id)))
-            .set(deleted.eq(true))
-            .execute(self.connection)
-            .map_err(|e| QueryError::new(e.to_string().as_str()))?;
-    
-        Ok(true)
-    }
 
-    fn restore(&mut self, user_id: Uuid) -> Result<bool, QueryError> {
-        use crate::infra::postgres::schema::usr_main::dsl::*;
-    
-        diesel::update(usr_main.filter(id.eq(user_id)))
-            .set(deleted.eq(false))
-            .execute(self.connection)
-            .map_err(|e| QueryError::new(e.to_string().as_str()))?;
-    
-        Ok(true)
-    }
 }

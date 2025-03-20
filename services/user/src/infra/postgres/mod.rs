@@ -1,5 +1,6 @@
-use std::env;
+use std::{env, sync::Arc};
 use diesel::{Connection, PgConnection};
+use tokio::sync::Mutex;
 
 pub mod  models;
 pub mod schema;
@@ -11,8 +12,8 @@ pub mod crypto;
 /// so must be set before init the service.
 /// 
 /// __`DATABASE_URL`__ = postgres://user:pass@host:port/db_name
-pub fn establish_connection() -> PgConnection {
+pub fn establish_connection() -> Arc<Mutex<PgConnection>> {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    PgConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+    Arc::new( Mutex::new(PgConnection::establish(&database_url)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))))
 }
