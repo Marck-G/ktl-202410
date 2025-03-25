@@ -3,7 +3,7 @@
 diesel::table! {
     prs_main (id) {
         id -> Uuid,
-        customer_id -> Uuid,
+        customer_id -> Nullable<Uuid>,
         #[max_length = 100]
         given_name -> Varchar,
         #[max_length = 200]

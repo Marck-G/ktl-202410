@@ -5,7 +5,7 @@ use crate::infra::postgres::schema::{prs_main, prs_metadata};
 #[table_name = "prs_main"]
 pub struct Person {
     pub id: uuid::Uuid,
-    pub customer_id: uuid::Uuid,
+    pub customer_id: Option<uuid::Uuid>,
     pub given_name: String,
     pub family_name: String,
     pub additional_name: Option<String>,

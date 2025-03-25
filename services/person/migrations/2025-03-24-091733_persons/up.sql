@@ -1,6 +1,6 @@
 CREATE TABLE PRS_main (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid() UNIQUE NOT NULL,
-    customer_id UUID NOT NULL,
+    customer_id UUID UNIQUE,
     given_name VARCHAR(100) NOT NULL,
     family_name VARCHAR(200) NOT NULL,
     additional_name VARCHAR(200),
