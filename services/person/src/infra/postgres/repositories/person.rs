@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::{domain::{entities::Person, mappers::Mapper, repository::PersonRepository}, infra::postgres::mapper::PgMapper};
 use crate::infra::postgres::schema::{prs_main, prs_metadata};
-use super::{models::models::{Person as InfraPerson, PersonMeta as InfraPersonMeta}, types::PgConnectionPool};
+use crate::infra::postgres::{models::models::{Person as InfraPerson, PersonMeta as InfraPersonMeta}, types::PgConnectionPool};
 use diesel::prelude::*; // Para las funciones de consulta y operaciones básicas
 
 pub struct PgPersonRepository {

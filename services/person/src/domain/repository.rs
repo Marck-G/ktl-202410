@@ -17,3 +17,8 @@ pub trait PersonRepository {
     async fn create_metadata(&mut self, person_id: Uuid, key: String, value: Option<String>) -> Result<bool, String>;
     async fn update_metadata(&mut self, metadata_id: Uuid, key: String, value: Option<String>) -> Result<bool, String>;
 }
+
+pub trait SearchRepository {
+    async fn search_by_name(&mut self, search_term: String) -> Result<Vec<Person>, String>;
+    async fn search_by_metadata_key(&mut self, key: String) -> Result<Vec<Person>, String>;
+}

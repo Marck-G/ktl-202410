@@ -1,7 +1,7 @@
 pub mod mapper;
 pub mod  models;
 pub mod schema;
-pub mod repository;
+pub mod repositories;
 pub mod types;
 
 use diesel::r2d2::{ConnectionManager, Pool};
