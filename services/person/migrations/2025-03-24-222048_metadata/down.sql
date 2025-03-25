@@ -1,0 +1,1 @@
+DROP TABLE PRS_metadata;
