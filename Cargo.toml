@@ -5,4 +5,9 @@ resolver = "2"
 [workspace.dependencies]
 errors = { path= "./libs/errors"}
 crypto_helper = { path= "./libs/crypto_helper"}
+chrono = { version = "0.4.40", features = ["serde"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+uuid = { version = "1.15.1", features = ["serde", "v4"] }
+diesel = { version = "2.2.0", features = ["chrono", "postgres", "serde_json", "uuid"] }
 
