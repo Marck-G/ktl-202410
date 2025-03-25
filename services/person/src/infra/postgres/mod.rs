@@ -1,6 +1,6 @@
 use std::env;
 use diesel::{Connection, PgConnection};
-
+pub mod mapper;
 pub mod  models;
 pub mod schema;
 // pub mod repositories;
