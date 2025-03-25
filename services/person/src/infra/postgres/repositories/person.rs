@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use chrono::Utc;
 use uuid::Uuid;
 
-use crate::{domain::{entities::Person, mappers::Mapper, repository::PersonRepository}, infra::postgres::mapper::PgMapper};
+use crate::{domain::{entities::{Person, Metadata}, mappers::Mapper, repository::PersonRepository}, infra::postgres::mapper::{PgMapper, PgMetadataMapper}};
 use crate::infra::postgres::schema::{prs_main, prs_metadata};
 use crate::infra::postgres::{models::models::{Person as InfraPerson, PersonMeta as InfraPersonMeta}, types::PgConnectionPool};
 use diesel::prelude::*; // Para las funciones de consulta y operaciones básicas
@@ -292,5 +292,15 @@ impl PersonRepository for PgPersonRepository {
             }
             Err(e) => Err(format!("Error al actualizar metadato: {:?}", e)),
         }
+    }
+
+    async fn get_metadata(&mut self, id_person_search: Uuid) -> Result<Vec<Metadata>, String> {
+        let connection = &mut self.db_pool;
+        let result: Vec<InfraPersonMeta> = prs_metadata::table
+        .filter(prs_metadata::person_id.eq(id_person_search))
+        .load::<InfraPersonMeta>(connection).expect("No se ha encontrado datos");
+
+        let out_metadata = result.into_iter().map(|metadata| {PgMetadataMapper::to_domain(metadata)}).collect();
+        Ok(out_metadata)
     }
 }

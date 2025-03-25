@@ -1,6 +1,6 @@
 
-use domain::repository::PersonRepository;
-use infra::postgres::{establish_connection, repository::PgPersonRepository};
+use domain::repository::{PersonRepository, SearchRepository};
+use infra::postgres::{establish_connection, repositories::{person::PgPersonRepository, search::PgSearchRepository}};
 use uuid::Uuid;
 
 
@@ -24,6 +24,7 @@ async fn main() {
     //     }
     // }
 
-    let result = repo.list(1, 10).await.unwrap();
+    // let result = repo.search_by_name("Marck".to_string()).await.unwrap();
+    let result = repo.get_metadata(Uuid::parse_str("04054104-c631-430f-8dcc-e148643de0fc").unwrap()).await.unwrap();
     println!("{}", serde_json::to_string_pretty(&result).unwrap());
 }

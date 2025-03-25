@@ -4,7 +4,15 @@ use crate::infra::postgres::models::models::{Person as InfraPerson, PersonMeta a
 use crate::domain::entities::{Metadata as DomainMetadata, Person as DomainPerson};
 
 pub struct PgMapper {}
+pub struct PgMetadataMapper {}
+
 impl PgMapper {
+    pub fn new () -> Self {
+        Self {}
+    }
+}
+
+impl PgMetadataMapper {
     pub fn new () -> Self {
         Self {}
     }
@@ -60,5 +68,29 @@ impl Mapper<InfraPerson, InfraPersonMeta> for PgMapper {
         }).collect();
 
         (infra_person, infra_metadata)
+    }
+}
+
+impl PgMetadataMapper {
+    pub fn to_domain(infra: InfraPersonMeta) -> DomainMetadata {
+        DomainMetadata {
+            id: infra.id,
+            key: infra.key,
+            value: infra.value,
+            date_created: infra.date_created,
+            date_modified: infra.date_modified,
+        }
+    }
+
+    // Mapper para convertir de Metadata (dominio) a InfraPersonMeta (infraestructura)
+    pub fn to_infrastructure(domain: DomainMetadata) -> InfraPersonMeta {
+        InfraPersonMeta {
+            id: domain.id,
+            person_id: domain.id, // Suponiendo que el ID de la persona se utiliza como person_id
+            key: domain.key,
+            value: domain.value,
+            date_created: domain.date_created,
+            date_modified: domain.date_modified,
+        }
     }
 }

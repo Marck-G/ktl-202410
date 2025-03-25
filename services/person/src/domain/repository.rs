@@ -1,7 +1,8 @@
+
 use uuid::Uuid;
 use async_trait::async_trait;
 
-use super::entities::Person;
+use super::entities::{Metadata, Person};
 
 
 #[async_trait]
@@ -12,6 +13,7 @@ pub trait PersonRepository {
     async fn get_by_metadata(&mut self, key: String, value: String) -> Result<Vec<Person>, String>;
     async fn create(&mut self, person: Person) -> Result<Person, String>;
     async fn update(&mut self, person: Person) -> Result<Person, String>;
+    async fn get_metadata(&mut self, id_person_search: Uuid) -> Result<Vec<Metadata>, String>;
     async fn delete(&mut self, person_id: Uuid) -> Result<(), String>;
     async fn delete_metadata(&mut self, metadata_id: Uuid) -> Result<(), String>;
     async fn create_metadata(&mut self, person_id: Uuid, key: String, value: Option<String>) -> Result<bool, String>;
