@@ -27,9 +27,9 @@ CREATE OR REPLACE FUNCTION diesel_set_updated_at() RETURNS trigger AS $$
 BEGIN
     IF (
         NEW IS DISTINCT FROM OLD AND
-        NEW.updated_at IS NOT DISTINCT FROM OLD.updated_at
+        NEW.date_modified IS NOT DISTINCT FROM OLD.date_modified
     ) THEN
-        NEW.updated_at := current_timestamp;
+        NEW.date_modified := current_timestamp;
     END IF;
     RETURN NEW;
 END;
