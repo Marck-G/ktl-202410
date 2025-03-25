@@ -72,5 +72,38 @@ impl PersonRepository for PgPersonRepository {
 
         Ok(result)
     }
-    
+
+    async fn list(&mut self, page: u64, limit: u64) -> Result<Vec<Person>, String> {
+        let connection = &mut self.db_pool;
+
+        // Calcular el OFFSET según la página y el límite
+        let offset = (page - 1) * limit;
+
+        // Obtener las personas con LIMIT y OFFSET
+        let infra_persons: Vec<InfraPerson> = match prs_main::table
+            .limit(limit as i64)
+            .offset(offset as i64)
+            .load::<InfraPerson>(connection)
+        {
+            Ok(persons) => persons,
+            Err(e) => return Err(format!("Error al obtener las personas: {:?}", e)),
+        };
+
+        // Obtener los metadatos para cada persona
+        let mut result = Vec::new();
+        for infra_person in infra_persons {
+            let infra_metadata: Vec<InfraPersonMeta> = match prs_metadata::table
+                .filter(prs_metadata::person_id.eq(infra_person.id))
+                .load::<InfraPersonMeta>(connection)
+            {
+                Ok(metadata) => metadata,
+                Err(e) => return Err(format!("Error al obtener metadatos para persona {}: {:?}", infra_person.id, e)),
+            };
+
+            let domain_person = PgMapper::to_domain(infra_person, infra_metadata);
+            result.push(domain_person);
+        }
+
+        Ok(result)
+    }    
 }
