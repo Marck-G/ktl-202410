@@ -3,7 +3,14 @@ use crate::domain::mappers::Mapper;
 use crate::infra::postgres::models::models::{Person as InfraPerson, PersonMeta as InfraPersonMeta};
 use crate::domain::entities::{Metadata as DomainMetadata, Person as DomainPerson};
 
-impl Mapper<InfraPerson, InfraPersonMeta> for InfraPerson {
+pub struct PgMapper {}
+impl PgMapper {
+    pub fn new () -> Self {
+        Self {}
+    }
+}
+
+impl Mapper<InfraPerson, InfraPersonMeta> for PgMapper {
     fn to_domain(infra: InfraPerson, metadata: Vec<InfraPersonMeta>) -> DomainPerson {
         let metadata = metadata
             .into_iter()
