@@ -2,8 +2,8 @@
 # see https://diesel.rs/guides/configuring-diesel-cli
 
 [print_schema]
-file = "src/schema.rs"
+file = "src/infra/postgres/schema.rs"
 custom_type_derives = ["diesel::query_builder::QueryId", "Clone"]
 
 [migrations_directory]
-dir = "/Users/mcarrion/Projects/PPR/ktl-202410/services/person/migrations"
+dir = "/home/mguzman/Projects/katalyst-mono/services/person/migrations"
